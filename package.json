@@ -1,0 +1,21 @@
+{
+  "name": "cloud-systratec",
+  "version": "1.0.0",
+  "description": "api rest y tcp server ",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "crc": "^3.4.3",
+    "express": "^4.14.0",
+    "mongoose": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
+  },
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alberto Barquin",
+  "license": "ISC"
+}
