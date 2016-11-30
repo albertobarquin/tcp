@@ -6,6 +6,20 @@ global.config =require ('./config')
 const app = require('./app')
 
 
+// importing Server class
+const TcpServer = require('./tcpServer/tcpServer');
+
+// Our configuration
+const PORT = 55893;
+const ADDRESS = "0.0.0.0"//"127.0.0.1"
+
+var tcpserver = new TcpServer(PORT, ADDRESS);
+
+// Starting our server
+tcpserver.start(() => {
+    console.log(`Tcp Server escuchando en puerto: ${ADDRESS}:${PORT}`);
+});
+
 //init bd & http server
 
 mongoose.connect(global.config.db, (err, res) => {
@@ -15,3 +29,8 @@ mongoose.connect(global.config.db, (err, res) => {
         console.log(`API REST escuchando en puerto ${global.config.port}`)
     })
 })
+
+
+
+
+
