@@ -45,16 +45,13 @@ class TcpServer {
         this.connection = net.createServer((socket) => {
 
             var client = new Client(socket);
-//            this._sendConfig(client);
-            // Validation, if the client is valid
             if (!server._validateClient(client)) {
                 client.socket.destroy();
                 return;
             }
             // Broadcast the new connection
             console.log(`${client.name} connected.\n`, client);
-            //const crc_client = crc.crc8('hola2').toString(10);
-            //server.broadcast(`el crc del nombre es ${crc_client}.\n`, client);
+
 
             // Storing client for later usage
             server.clients.push(client);
@@ -125,13 +122,9 @@ class TcpServer {
         var now  =parseInt(clock.now.ms()/1000).toString(16).toUpperCase();//timestamp UTC en milisegundos pasado a segundos redondeado, en hexadecimal y con mayúsculas
         var sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
         var confMassage = "PCK_CON";
-        // confMassage += '-';
         confMassage += this._lpad(now,8,0);
-        //confMassage += '-';
         confMassage +=this._lpad(sample_time_hex_segundos,4,0);
-        //confMassage += '-';
         confMassage += this._lpad(syncCount.toString(16).toUpperCase(),4 ,0);
-        //confMassage += '-';
         confMassage += this._lpad(crc.crc8(confMassage).toString(16).toUpperCase(),2,0);
         console.log(confMassage)
         return client.receiveMessage(confMassage);
