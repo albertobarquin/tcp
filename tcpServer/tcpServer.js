@@ -44,7 +44,10 @@ class TcpServer {
 
         this.connection = net.createServer((socket) => {
 
+
             var client = new Client(socket);
+
+
             if (!server._validateClient(client)) {
                 client.socket.destroy();
                 return;
@@ -94,26 +97,6 @@ class TcpServer {
     _validateClient (client){
         return true;
     }
-    /*            def send_CONF(self):
-     global tiempo_config
-     comienzo = time.time()
-     sample_time = 1  # 15 minutes
-     sync_count = 2  # 4 samples per hour
-     now = datetime.utcnow()
-     cfg_message = "PCK_CON"
-     data_message = "%08X" % int(now.strftime('%s'))
-     data_message += "%04X" % int(sample_time * 60)  # convert to seconds
-     data_message += "%04X" % sync_count
-     data_message += "%02X" % calculateCRC(data_message)
-     # data_message+="00"
-     cfg_message += data_message
-     self.request.sendall(cfg_message)
-     print ('enviado el config', cfg_message)
-     self.message += "CFG:SENT (%d-%d) " % (sample_time, sync_count)
-     self.data = ''
-     fin = time.time() - comienzo
-     tiempo_config += fin*/
-
 
     _sendConfig(client){
         const sampleTime = 1 //tiempo entre muestras en minutos
