@@ -2,31 +2,29 @@
 
 
 const mongoose = require('mongoose')
-global.config =require ('./config')
+global.abk_config =require ('./config')
 const app = require('./app')
 
 
 // importing Server class
 const TcpServer = require('./tcpServer/tcpServer');
 
-// Our configuration
-const PORT = 55893;
-const ADDRESS = "0.0.0.0"//"127.0.0.1"
 
-var tcpserver = new TcpServer(PORT, ADDRESS);
+
+var tcpserver = new TcpServer(global.abk_config.tcpPort, global.abk_config.tcpAdress);
 
 // Starting our server
 tcpserver.start(() => {
-    console.log(`Tcp Server escuchando en puerto: ${ADDRESS}:${PORT}`);
+    console.log(`Tcp Server escuchando en puerto: ${global.abk_config.tcpAdress}:${global.abk_config.tcpPort}`);
 });
 
 //init bd & http server
 
-mongoose.connect(global.config.db, (err, res) => {
+mongoose.connect(global.abk_config.db, (err, res) => {
     if(err) return console.log ('Error conectando a la base de datos:'+ err)
     console.log('db connection ok')
-    app.listen(global.config.port, ()=>{
-        console.log(`API REST escuchando en puerto ${global.config.port}`)
+    app.listen(global.abk_config.port, ()=>{
+        console.log(`API REST escuchando en puerto ${global.abk_config.port}`)
     })
 })
 

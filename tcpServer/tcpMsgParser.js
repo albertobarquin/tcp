@@ -1,11 +1,12 @@
 'use strict'
-//var a = parseInt('581c33d2', 16);
 
 
 var _toInt = function(hex) {return parseInt(hex, 16);}
 var _toDate = function (s) {return (new Date(s*1000)).toUTCString();}
 var _hexToDate = function(hexMs) {return _toDate(_toInt(hexMs));}
 var _endsWith = function (word, n){ return word.substr((word.length -n),n);}
+
+
 var _firstParse = function(tramaRaw){
 
 

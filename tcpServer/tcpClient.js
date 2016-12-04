@@ -8,6 +8,7 @@ class tcpClient {
         this.port 	 = socket.remotePort;
         this.name    = `${this.address}:${this.port}`;
         this.socket  = socket;
+        this.id      = "";
     }
 
     receiveMessage (message) {

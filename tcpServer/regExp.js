@@ -4,7 +4,7 @@
 "use strict";
 let regExp = function (str, regex){
 
-    const regex = /git estatusPCK_EST([0-9A-Fa-f]*)PCK/g;
+    const regex = /PCK_EST([0-9A-Fa-f]*)PCK/g;
     const str = str ||`PCK_EST00271000002320PCK_DAT582ebf520800222022501db022101d8022001c30208019b+0+0+0+0+0+0+00000000160dce0000+000PCK_FIN`;
     let m;
 

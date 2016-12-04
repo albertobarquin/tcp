@@ -44,6 +44,7 @@ class TcpServer {
 
         this.connection = net.createServer((socket) => {
 
+            socket.setTimeout(global.abk_config.tcpTimeOut);
 
             var client = new Client(socket);
 
@@ -52,6 +53,7 @@ class TcpServer {
                 client.socket.destroy();
                 return;
             }
+
             // Broadcast the new connection
             console.log(`${client.name} connected.\n`, client);
 
@@ -59,11 +61,40 @@ class TcpServer {
             // Storing client for later usage
             server.clients.push(client);
 
+            //socket events
+
             // Triggered on message received by this client
             socket.on('data', (data) => {
+
                 // Broadcasting the message
                 server.broadcast(`${client.name} says: ${data}`, client);
-                var data_str = data.toString()
+
+                let data_str = data.toString();
+                let data_prefix = data_str.substr(0,11);
+
+                //tenemos que comprobar:
+                // la longitud de la cadena de datos
+                // Si si hay que mandar el config o no
+                // si vienen datos
+                // si es la última trama
+                // si vienen todas las tramas
+
+
+
+                
+
+                /*switch (data_prefix){
+                    case 'PCK_IDE':
+                        //
+                    break;
+
+
+
+
+                }*/
+
+
+
                 if (data_str.substr(0,11) == "PCK_IDE0800"){
                     this._sendConfig(client);
                     console.log ("Config sent")
@@ -78,6 +109,11 @@ class TcpServer {
                 // Broadcasting that this player left
                 server.broadcast(`${client.name} disconnected.\n`);
             });
+
+            // caso de error, se llama automáticamente a close
+            socket.on('error', (err) => {
+                console.log (`error en la conexion tcp: ${err}`)
+            })
 
         });
 

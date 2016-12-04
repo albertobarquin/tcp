@@ -3,6 +3,8 @@
  */
 module.exports = {
     port : process.env.REST_PORT || 3000,
-    tcpPort: process.env.TCP_PORT || 3001,
-    db : process.env.DB || 'mongodb://localhost:27017/cloudsystratec'
-}
+    tcpPort: process.env.TCP_PORT || 55893,
+    tcpAdress: "0.0.0.0",
+    db : process.env.DB || 'mongodb://localhost:27017/cloudsystratec',
+    tcpTimeOut : 60*1000
+};
