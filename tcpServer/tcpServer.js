@@ -30,7 +30,6 @@ class TcpServer {
                 return;
             client.receiveMessage(message);
         });
-        console.log('tcpServer.js ->33')
         console.log(message.replace(/\n+$/, ""));
     }
 
@@ -41,7 +40,7 @@ class TcpServer {
     start (callback) {
 
         var server = this;
-        const regex = /END/;
+        const regexEnd = /END/;
         const regexData =/PCK_DAT([0-9A-Fa-f-+-.]*)PCK_FIN/;
 
 
@@ -58,9 +57,7 @@ class TcpServer {
             }
 
             // Broadcast the new connection
-           // console.log(`${client.name} connected.\n`, client);
              console.log(`${client.name} connected.\n`);
-
 
             // Storing client for later usage
             server.clients.push(client);
@@ -71,48 +68,27 @@ class TcpServer {
             socket.on('data', (data) => {
 
                 // Broadcasting the message
-                server.broadcast(`${client.name} says: ${data}`, client);
+               // server.broadcast(`${client.name} says: ${data}`, client);
 
                 let data_str = data.toString();
-
-                let data_prefix = data_str.substr(0,11);
-
-                //tenemos que comprobar:
-                // la longitud de la cadena de datos
-                // Si si hay que mandar el config o no
-                // si vienen datos
-                // si es la última trama
-                // si vienen todas las tramas
-
-
-
-                
-
-                /*switch (data_prefix){
-                    case 'PCK_IDE':
-                        //
-                    break;
-
-
-
-
-                }*/
-
-
 
                 if (data_str.substr(0,11) == "PCK_IDE0500"){
                     this._sendConfig(client);
                     console.log ("Config sent")
+                    return true
                 }
                 let dataPart = regexData.exec(data_str);
                 if (dataPart != null && dataPart[1]){
-                    console.log('existe el grupo 1');
-                    console.log(dataPart[1])
+                    //console.log(data_str);
+                    console.log(this._parse(dataPart[1]).join(', '));
+                    return true
 
                 }
-                if (regex.exec(data_str)){
+
+                if (regexEnd.exec(data_str)){
                     console.log('END encontrado')
                     client.receiveMessage('ADIOS');
+                    return true
                 }
 
             });
@@ -122,7 +98,8 @@ class TcpServer {
                 // Removing the client from the list
                 server.clients.splice(server.clients.indexOf(client), 1);
                 // Broadcasting that this player left
-                server.broadcast(`${client.name} disconnected.\n`);
+                //server.broadcast(`${client.name} disconnected.\n`);
+                console.log(`${client.name} disconnected.\n`);
             });
 
             // caso de error, se llama automáticamente a close
@@ -142,9 +119,7 @@ class TcpServer {
 
     }
 
-    /*
-     * An example function: Validating the client
-     */
+
     _validateClient (client){
         return true;
     }
@@ -172,8 +147,40 @@ class TcpServer {
 
         return str;
     };
+    _toInt(hex) {return parseInt(hex, 16);}
+    _toDate(s) {return (new Date(s*1000)).toUTCString();}
+    _hexToDate(hexMs) {return this._toDate(this._toInt(hexMs));}
+
+    _parse (trama){
+        const tramaParseada = [];
+
+            tramaParseada[0] = this._hexToDate (trama.substr(0,8));       //fecha
+            tramaParseada[1] = trama.substr(8,4);       //ID
+            tramaParseada[2] = trama.substr(12,1);      //PID
+            tramaParseada[3] = trama.substr(13,2);      //COD
+            tramaParseada[4] = this._toInt(trama.substr(15,4));     //AN1
+            tramaParseada[5] = this._toInt(trama.substr(19,4));     //AN2
+            tramaParseada[6] = this._toInt(trama.substr(23,4));     //AN3
+            tramaParseada[7] = this._toInt(trama.substr(27,4));     //AN4
+            tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
+            tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
+            tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
+            tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
+            tramaParseada[12] = trama.substr(47,12);   //SD
+            tramaParseada[13] = trama.substr(60,4);     //PUL 1
+            tramaParseada[14] = trama.substr(64,4);     //PUL 2
+            tramaParseada[15] = trama.substr(68,2);     //SENS TEMP
+            tramaParseada[16] = trama.substr(70,4);     //BAT
+            tramaParseada[17] = trama.substr(74,4)     //HUMD
+            tramaParseada[18] = trama.substr(78,4);    //TEMP
+            tramaParseada[19] = this._toInt(trama.substr(0,8));       //fecha
 
 
+
+        return tramaParseada;
+
+
+    }
 
 }
 

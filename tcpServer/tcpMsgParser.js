@@ -1,45 +1,57 @@
 'use strict'
 
-
-var _toInt = function(hex) {return parseInt(hex, 16);}
-var _toDate = function (s) {return (new Date(s*1000)).toUTCString();}
-var _hexToDate = function(hexMs) {return _toDate(_toInt(hexMs));}
-var _endsWith = function (word, n){ return word.substr((word.length -n),n);}
-
-
-var _firstParse = function(tramaRaw){
+class tcpMsgParser {
+    //utils
+    _toInt = function(hex) {return parseInt(hex, 16);}
+    _toDate = function (s) {return (new Date(s*1000)).toUTCString();}
+    _hexToDate = function(hexMs) {return _toDate(_toInt(hexMs));}
+    _endsWith = function (word, n){ return word.substr((word.length -n),n);}
 
 
-    var result = {err:'', trama:tramaRaw, end: false}
+    constructor (msg){
+        this.msg = msg
+        this.config.tramaMinLength = 60
+    }
 
-    // comprobamos la longitud de la cadena
-    if (result.trama.length < 97){
-        result.err +='Trama demasiado corta\n';
+    //de momento no usamos esta función pues el trabajo biene hecho de
+    _firstParse = function(tramaRaw){
 
+
+        var result = {err:'', trama:tramaRaw, end: false}
+
+        // comprobamos la longitud de la cadena
+        if (result.trama.length <  this.config.tramaMinLength){
+            result.err +='Trama demasiado corta\n';
+
+            return result;
+        }
+
+        //comprobamos si empieza por  PCK_DAT
+        if ( result.trama.substr(0,7) === 'PCK_DAT'){
+            result.trama = result.trama.substr(7,(tramaRaw.length-7))
+        }
+
+        //comprobamos si finaliza por end
+        if(_endsWith(result.trama, 3) === 'END'){
+            result.trama = result.trama.substr(0,(result.trama.length-3))
+            result.end = true
+        }
+
+        //comprobamos si finaiza por  PCK_FIN
+        if(_endsWith(result.trama, 7) === 'PCK_FIN'){
+            result.trama = result.trama.substr(0,(result.trama.length-7))
+        }
+        else {
+            result.err+='trama incompleta, no acaba en PCK_FIN\n';
+            return result;
+        }
         return result;
     }
 
-    //comprobamos si empieza por  PCK_DAT
-    if ( result.trama.substr(0,7) === 'PCK_DAT'){
-        result.trama = result.trama.substr(7,(tramaRaw.length-7))
-    }
-
-    //comprobamos si finaliza por end
-    if(_endsWith(result.trama, 3) === 'END'){
-        result.trama = result.trama.substr(0,(result.trama.length-3))
-        result.end = true
-    }
-
-    //comprobamos si finaiza por  PCK_FIN
-    if(_endsWith(result.trama, 7) === 'PCK_FIN'){
-        result.trama = result.trama.substr(0,(result.trama.length-7))
-    }
-    else {
-        result.err+='trama incompleta, no acaba en PCK_FIN\n';
-        return result;
-    }
-    return result;
 }
+
+
+
 
 var _parse =function(trama){
     var tramaParseada = []
