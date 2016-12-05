@@ -30,6 +30,7 @@ class TcpServer {
                 return;
             client.receiveMessage(message);
         });
+        console.log('tcpServer.js ->33')
         console.log(message.replace(/\n+$/, ""));
     }
 
@@ -40,6 +41,8 @@ class TcpServer {
     start (callback) {
 
         var server = this;
+        const regex = /END/;
+        const regexData =/PCK_DAT([0-9A-Fa-f-+-.]*)PCK_FIN/;
 
 
         this.connection = net.createServer((socket) => {
@@ -55,7 +58,8 @@ class TcpServer {
             }
 
             // Broadcast the new connection
-            console.log(`${client.name} connected.\n`, client);
+           // console.log(`${client.name} connected.\n`, client);
+             console.log(`${client.name} connected.\n`);
 
 
             // Storing client for later usage
@@ -70,6 +74,7 @@ class TcpServer {
                 server.broadcast(`${client.name} says: ${data}`, client);
 
                 let data_str = data.toString();
+
                 let data_prefix = data_str.substr(0,11);
 
                 //tenemos que comprobar:
@@ -95,9 +100,19 @@ class TcpServer {
 
 
 
-                if (data_str.substr(0,11) == "PCK_IDE0800"){
+                if (data_str.substr(0,11) == "PCK_IDE0500"){
                     this._sendConfig(client);
                     console.log ("Config sent")
+                }
+                let dataPart = regexData.exec(data_str);
+                if (dataPart != null && dataPart[1]){
+                    console.log('existe el grupo 1');
+                    console.log(dataPart[1])
+
+                }
+                if (regex.exec(data_str)){
+                    console.log('END encontrado')
+                    client.receiveMessage('ADIOS');
                 }
 
             });
@@ -157,6 +172,7 @@ class TcpServer {
 
         return str;
     };
+
 
 
 }
