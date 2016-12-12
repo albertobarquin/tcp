@@ -4,6 +4,7 @@
 const net = require('net');
 const crc = require('crc');
 const UTCClock = require('utc-clock');
+const SensorData =require('../models/sensorsData')
 
 
 // importing Client class
@@ -80,7 +81,9 @@ class TcpServer {
                 let dataPart = regexData.exec(data_str);
                 if (dataPart != null && dataPart[1]){
                     //console.log(data_str);
-                    console.log(this._parse(dataPart[1]).join(', '));
+                    let tramaParseada = this._parse(dataPart[1]);
+                    this._saveData(tramaParseada[4], tramaParseada[5], tramaParseada[6], tramaParseada[19]);
+                    console.log(tramaParseada.join(', '));
                     return true
 
                 }
@@ -128,14 +131,38 @@ class TcpServer {
         const sampleTime = 1 //tiempo entre muestras en minutos
         const syncCount = 2 //número de muestras que acumula antes de enviar
         var clock = new UTCClock();
-        var now  =parseInt(clock.now.ms()/1000).toString(16).toUpperCase();//timestamp UTC en milisegundos pasado a segundos redondeado, en hexadecimal y con mayúsculas
+        //var now  =(parseInt(clock.now.ms()/1000, 10).toFixed(0)).toString(16).toUpperCase();//timestamp UTC en milisegundos pasado a segundos redondeado, en hexadecimal y con mayúsculas
+        let now = (+(parseInt(clock.now.ms()/1000, 10).toFixed(0))).toString(16).toUpperCase()
         var sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
         var confMassage = "PCK_CON";
-        confMassage += this._lpad(now,8,0);
-        confMassage +=this._lpad(sample_time_hex_segundos,4,0);
-        confMassage += this._lpad(syncCount.toString(16).toUpperCase(),4 ,0);
-        confMassage += this._lpad(crc.crc8(confMassage).toString(16).toUpperCase(),2,0);
-        console.log(confMassage)
+        var dataMassage = this._lpad(now,8,'0');
+        dataMassage +=this._lpad(sample_time_hex_segundos,4,'0');
+        dataMassage += this._lpad(syncCount.toString(16).toUpperCase(),4 ,'0');
+
+        var crc_msg = crc.crc8(dataMassage)
+
+        dataMassage += this._lpad(crc_msg.toString(16).toUpperCase(),2,'0');
+        confMassage += dataMassage
+
+        console.log ('timestamp crudo:'+now);
+        console.log('timestamp:'+this._lpad(now,8,'0'));
+        console.log('sample_time_hex_segundos:'+this._lpad(sample_time_hex_segundos,4,'0'));
+        console.log('syncCount:'+this._lpad(syncCount.toString(16).toUpperCase(),4 ,'0'));
+        console.log('crc crudo = '+crc_msg.toString(16));
+        console.log('crc:'+this._lpad(crc_msg.toString(16).toUpperCase(),2,'0'));
+
+
+
+
+
+
+        console.log(confMassage);
+
+
+
+
+
+
         return client.receiveMessage(confMassage);
     }
     _lpad(str, length, opt_ch) {
@@ -150,6 +177,18 @@ class TcpServer {
     _toInt(hex) {return parseInt(hex, 16);}
     _toDate(s) {return (new Date(s*1000)).toUTCString();}
     _hexToDate(hexMs) {return this._toDate(this._toInt(hexMs));}
+    _saveData(medidaA, medidaB, medidaC, time){
+        let newSensorData = new SensorData();
+        newSensorData.medidaA = medidaA;
+        newSensorData.medidaB = medidaB;
+        newSensorData.medidaC = medidaC;
+        newSensorData.time = time;
+        newSensorData.save((err,scSaved)=>{
+            if (err) {console.log('error al guardar en la base de datos:'+err)}
+            else {console.log('saved')}
+        })
+
+    }
 
     _parse (trama){
         const tramaParseada = [];

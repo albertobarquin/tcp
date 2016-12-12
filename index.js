@@ -19,16 +19,16 @@ tcpserver.start(() => {
 });
 
 //init bd & http server
-/**
+
 mongoose.connect(global.abk_config.db, (err, res) => {
     if(err) return console.log ('Error conectando a la base de datos:'+ err)
-    console.log('db connection ok')
+    console.log('db connection ok'+global.abk_config.db)
     app.listen(global.abk_config.port, ()=>{
         console.log(`API REST escuchando en puerto ${global.abk_config.port}`)
     })
 })
 
 
-**/
+
 
 
