@@ -11,6 +11,7 @@ const SensorDataSchema = Schema({
     medidaA:Number,
     medidaB:Number,
     medidaC:Number,
+    sc_id:String,
     time:Number
 })
 mongoose.model

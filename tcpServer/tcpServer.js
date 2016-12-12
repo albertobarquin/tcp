@@ -82,7 +82,7 @@ class TcpServer {
                 if (dataPart != null && dataPart[1]){
                     //console.log(data_str);
                     let tramaParseada = this._parse(dataPart[1]);
-                    this._saveData(tramaParseada[4], tramaParseada[5], tramaParseada[6], tramaParseada[19]);
+                    this._saveData(tramaParseada[4], tramaParseada[5], tramaParseada[6],tramaParseada[1], tramaParseada[19]);
                     console.log(tramaParseada.join(', '));
                     return true
 
@@ -128,8 +128,8 @@ class TcpServer {
     }
 
     _sendConfig(client){
-        const sampleTime = 1 //tiempo entre muestras en minutos
-        const syncCount = 2 //número de muestras que acumula antes de enviar
+        const sampleTime = global.abk_config.sampleTime || 1; //tiempo entre muestras en minutos
+        const syncCount = global.abk_config.syncCount || 2 ;//número de muestras que acumula antes de enviar
         var clock = new UTCClock();
         //var now  =(parseInt(clock.now.ms()/1000, 10).toFixed(0)).toString(16).toUpperCase();//timestamp UTC en milisegundos pasado a segundos redondeado, en hexadecimal y con mayúsculas
         let now = (+(parseInt(clock.now.ms()/1000, 10).toFixed(0))).toString(16).toUpperCase()
@@ -144,7 +144,8 @@ class TcpServer {
         dataMassage += this._lpad(crc_msg.toString(16).toUpperCase(),2,'0');
         confMassage += dataMassage
 
-        //console.log(confMassage);
+
+        console.log(confMassage + '---------'+sampleTime+'/'+syncCount+'------'+this._ahora());
 
 
 
@@ -164,12 +165,14 @@ class TcpServer {
     };
     _toInt(hex) {return parseInt(hex, 16);}
     _toDate(s) {return (new Date(s*1000)).toUTCString();}
+    _ahora () {return new Date().toUTCString();}
     _hexToDate(hexMs) {return this._toDate(this._toInt(hexMs));}
-    _saveData(medidaA, medidaB, medidaC, time){
+    _saveData(medidaA, medidaB, medidaC, sc_id, time){
         let newSensorData = new SensorData();
         newSensorData.medidaA = medidaA;
         newSensorData.medidaB = medidaB;
         newSensorData.medidaC = medidaC;
+        newSensorData.sc_id = sc_id;
         newSensorData.time = time;
         newSensorData.save((err,scSaved)=>{
             if (err) {console.log('error al guardar en la base de datos:'+err)}
