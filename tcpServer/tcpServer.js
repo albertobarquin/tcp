@@ -144,19 +144,7 @@ class TcpServer {
         dataMassage += this._lpad(crc_msg.toString(16).toUpperCase(),2,'0');
         confMassage += dataMassage
 
-        console.log ('timestamp crudo:'+now);
-        console.log('timestamp:'+this._lpad(now,8,'0'));
-        console.log('sample_time_hex_segundos:'+this._lpad(sample_time_hex_segundos,4,'0'));
-        console.log('syncCount:'+this._lpad(syncCount.toString(16).toUpperCase(),4 ,'0'));
-        console.log('crc crudo = '+crc_msg.toString(16));
-        console.log('crc:'+this._lpad(crc_msg.toString(16).toUpperCase(),2,'0'));
-
-
-
-
-
-
-        console.log(confMassage);
+        //console.log(confMassage);
 
 
 
