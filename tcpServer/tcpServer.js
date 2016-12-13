@@ -80,7 +80,7 @@ class TcpServer {
                 }
                 let dataPart = regexData.exec(data_str);
                 if (dataPart != null && dataPart[1]){
-                    //console.log(data_str);
+                    console.log(dataPart[1]);
                     let tramaParseada = this._parse(dataPart[1]);
                     this._saveData(tramaParseada[4], tramaParseada[5], tramaParseada[6],tramaParseada[1], tramaParseada[19]);
                     console.log(tramaParseada.join(', '));
@@ -167,6 +167,20 @@ class TcpServer {
     _toDate(s) {return (new Date(s*1000)).toUTCString();}
     _ahora () {return new Date().toUTCString();}
     _hexToDate(hexMs) {return this._toDate(this._toInt(hexMs));}
+    _calcTempC (raw) {
+        let valorSensorDecimal = this._toInt(raw);
+        let RNTC = (12.207 * valorSensorDecimal) / (3.3 - (0.0012207 * valorSensorDecimal));
+        return ((3435 / (Math.log(RNTC / 10000) + 11.52104645313)) - 273.15).toFixed(2);
+    }
+
+
+
+
+
+
+
+
+
     _saveData(medidaA, medidaB, medidaC, sc_id, time){
         let newSensorData = new SensorData();
         newSensorData.medidaA = medidaA;
@@ -191,19 +205,15 @@ class TcpServer {
             tramaParseada[4] = this._toInt(trama.substr(15,4));     //AN1
             tramaParseada[5] = this._toInt(trama.substr(19,4));     //AN2
             tramaParseada[6] = this._toInt(trama.substr(23,4));     //AN3
-            tramaParseada[7] = this._toInt(trama.substr(27,4));     //AN4
+            tramaParseada[7] = this._calcTempC(trama.substr(27,4))+'ºC';     //Temperatura exterior //TODO ELIMINA LOS ºC QUE NO DESEAMOS UN STRING
             tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
             tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
             tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
             tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
-            tramaParseada[12] = trama.substr(47,12);   //SD
-            tramaParseada[13] = trama.substr(60,4);     //PUL 1
-            tramaParseada[14] = trama.substr(64,4);     //PUL 2
-            tramaParseada[15] = trama.substr(68,2);     //SENS TEMP
-            tramaParseada[16] = trama.substr(70,4);     //BAT
-            tramaParseada[17] = trama.substr(74,4)     //HUMD
-            tramaParseada[18] = trama.substr(78,4);    //TEMP
-            tramaParseada[19] = this._toInt(trama.substr(0,8));       //fecha
+            tramaParseada[12] = this._toInt(trama.substr(56,2));                 //temperatura interior
+            tramaParseada[13] = this._toInt(trama.substr(58,4));     //bat
+
+            tramaParseada[14] = this._toInt(trama.substr(0,8));       //fecha
 
 
 
