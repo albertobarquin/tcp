@@ -87,7 +87,7 @@ class TcpServer {
                     let dataPart = regexData.exec(data_str);
                     if (dataPart != null && dataPart[1]){
                         //console.log(dataPart[1]);
-                        server.broadcast(`${client.id} says: ${dataPart[1]}`, client);
+                        //server.broadcast(`${client.id} says: ${dataPart[1]}`, client);
 
                         let tramaParseada = this._parse(dataPart[1]);
                         this._saveData(tramaParseada);
