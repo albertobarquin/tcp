@@ -27,9 +27,9 @@ class TcpServer {
      */
     broadcast (message, clientSender) {
         this.clients.forEach((client) => {
-            if (client === clientSender)
+            if (client === clientSender || client.id === 'E0500' || client.id === '')
                 return;
-            client.receiveMessage(message);
+            client.receiveMessage('\n'+message+'\n');
         });
         console.log(message.replace(/\n+$/, ""));
     }
@@ -58,7 +58,8 @@ class TcpServer {
             }
 
             // Broadcast the new connection
-             console.log(`${client.name} connected.\n`);
+             server.broadcast(`${client.name} connected.\n`);
+            //client.receiveMessage(`hola ${client.name}`);
 
             // Storing client for later usage
             server.clients.push(client);
@@ -68,31 +69,74 @@ class TcpServer {
             // Triggered on message received by this client
             socket.on('data', (data) => {
 
-                // Broadcasting the message
-               // server.broadcast(`${client.name} says: ${data}`, client);
+
 
                 let data_str = data.toString();
 
+                if (data_str.trim() === ''){ return}
+
                 if (data_str.substr(0,11) == "PCK_IDE0500"){
+                    console.log (data_str);
+                    client.id= 'E0500';
                     this._sendConfig(client);
-                    console.log ("Config sent")
+                    //server.broadcast(`${client.id} says: ${"Config sent"}`, client);
                     return true
                 }
-                let dataPart = regexData.exec(data_str);
-                if (dataPart != null && dataPart[1]){
-                    console.log(dataPart[1]);
-                    let tramaParseada = this._parse(dataPart[1]);
-                    this._saveData(tramaParseada[4], tramaParseada[5], tramaParseada[6],tramaParseada[1], tramaParseada[19]);
-                    console.log(tramaParseada.join(', '));
+                else if (data_str.substr(0,7) == "PCK_EST" || data_str.substr(0,3) == "END"){
+
+                    let dataPart = regexData.exec(data_str);
+                    if (dataPart != null && dataPart[1]){
+                        //console.log(dataPart[1]);
+                        server.broadcast(`${client.id} says: ${dataPart[1]}`, client);
+
+                        let tramaParseada = this._parse(dataPart[1]);
+                        this._saveData(tramaParseada);
+                        //console.log(tramaParseada.join(', '))
+                        server.broadcast(`${client.id} says: ${this._joinObj(tramaParseada)}`, client);
+                        return true
+
+                    }
+
+                    if (regexEnd.exec(data_str)){
+                        console.log('END')
+                        client.receiveMessage('ADIOS');
+                        return true
+                    }
+                }
+                else if (client.id =='' && data_str.trim() == "santiago@WOPR"){
+                    client.receiveMessage('Hello  professor Falken\n');
+                    client.receiveMessage(`La frecuencia de las medidas es de ${global.abk_config.sampleTime} y se envían en grupos de ${global.abk_config.syncCount}\n`);
+                    client.receiveMessage('Vía telnet sólo hay acceso a los datos en tiempo real, así que debes esperar a que lleguen\n');
+                    client.receiveMessage('Para cerrar sesión di adios\n\n\n\n\n');
+                    client.id = 'santiago';
                     return true
 
                 }
+                else if (client.id =='' && data_str.trim() == "alberto@WOPR"){
+                    client.receiveMessage('Hello  professor Falken\n');
+                    client.receiveMessage(`La frecuencia de las medidas es de ${global.abk_config.sampleTime} y se envían en grupos de ${global.abk_config.syncCount}\n`);
+                    client.receiveMessage('Vía telnet sólo hay acceso a los datos en tiempo real, así que debes esperar a que lleguen\n');
+                    client.receiveMessage('Para cerrar sesión di adios\n\n\n\n\n');
+                    client.id = 'alberto';
+                    return true
 
-                if (regexEnd.exec(data_str)){
-                    console.log('END encontrado')
-                    client.receiveMessage('ADIOS');
+                }
+                else if (data_str.trim() == "adios" ||  client.id =='alberto' && data_str.trim() == "adios"){
+                    client.receiveMessage('Vuelve pronto\n');
+                    client.socket.end('bye');
                     return true
                 }
+                else if (client.id =='') {
+                        client.receiveMessage(`Acceso denegado ${2-client.loginAtemps} intento/s restantes/s\n`);
+                        client.loginAtemps ++;
+                        if(client.loginAtemps>2) {client.socket.end('acceso no autorizado');}
+                        return true
+                }
+                else {
+
+                    server.broadcast(`${client.id} says: ${data_str}`, client);
+                }
+
 
             });
 
@@ -101,8 +145,8 @@ class TcpServer {
                 // Removing the client from the list
                 server.clients.splice(server.clients.indexOf(client), 1);
                 // Broadcasting that this player left
-                //server.broadcast(`${client.name} disconnected.\n`);
-                console.log(`${client.name} disconnected.\n`);
+                server.broadcast(`${client.name} disconnected.\n`);
+                //console.log(`${client.name} disconnected.\n`);
             });
 
             // caso de error, se llama automáticamente a close
@@ -131,7 +175,6 @@ class TcpServer {
         const sampleTime = global.abk_config.sampleTime || 1; //tiempo entre muestras en minutos
         const syncCount = global.abk_config.syncCount || 2 ;//número de muestras que acumula antes de enviar
         var clock = new UTCClock();
-        //var now  =(parseInt(clock.now.ms()/1000, 10).toFixed(0)).toString(16).toUpperCase();//timestamp UTC en milisegundos pasado a segundos redondeado, en hexadecimal y con mayúsculas
         let now = (+(parseInt(clock.now.ms()/1000, 10).toFixed(0))).toString(16).toUpperCase()
         var sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
         var confMassage = "PCK_CON";
@@ -155,8 +198,8 @@ class TcpServer {
         return client.receiveMessage(confMassage);
     }
     _lpad(str, length, opt_ch) {
-        var str = String(str);
-        var opt_ch = opt_ch || '0';
+         str = String(str);
+         opt_ch = opt_ch || '0';
 
         while (str.length < length)
             str = opt_ch + str;
@@ -164,30 +207,41 @@ class TcpServer {
         return str;
     };
     _toInt(hex) {return parseInt(hex, 16);}
-    _toDate(s) {return (new Date(s*1000)).toUTCString();}
-    _ahora () {return new Date().toUTCString();}
+    _toDate(s)  {return (new Date(s*1000)).toUTCString();}
+    _ahora ()   {return new Date().toUTCString();}
     _hexToDate(hexMs) {return this._toDate(this._toInt(hexMs));}
     _calcTempC (raw) {
         let valorSensorDecimal = this._toInt(raw);
         let RNTC = (12.207 * valorSensorDecimal) / (3.3 - (0.0012207 * valorSensorDecimal));
         return ((3435 / (Math.log(RNTC / 10000) + 11.52104645313)) - 273.15).toFixed(2);
     }
+    _joinObj (obj){
+        let result ='';
+        for (var prop in obj){
+            result += prop +': '+ obj[prop]+' '
+        }
+        result +='\n'
+        return result
+    }
 
 
-
-
-
-
-
-
-
-    _saveData(medidaA, medidaB, medidaC, sc_id, time){
+    _saveData(sensorData ){
         let newSensorData = new SensorData();
-        newSensorData.medidaA = medidaA;
-        newSensorData.medidaB = medidaB;
-        newSensorData.medidaC = medidaC;
-        newSensorData.sc_id = sc_id;
-        newSensorData.time = time;
+        newSensorData.tramaRaw = sensorData.tramaRaw;
+        newSensorData.medidaA = sensorData.medidaA;
+        newSensorData.medidaB =  sensorData.medidaB;
+        newSensorData.medidaC =  sensorData.medidaC;
+        newSensorData.sc_id   =  sensorData.sc_id;
+        newSensorData.time    =  sensorData.time;
+        newSensorData.tempExt =  sensorData.tempExt;
+        newSensorData.tempInt =  sensorData.tempInt;
+        newSensorData.bat     =  sensorData.bat;
+
+
+
+
+
+
         newSensorData.save((err,scSaved)=>{
             if (err) {console.log('error al guardar en la base de datos:'+err)}
             else {console.log('saved')}
@@ -197,23 +251,22 @@ class TcpServer {
 
     _parse (trama){
         const tramaParseada = [];
-
-            tramaParseada[0] = this._hexToDate (trama.substr(0,8));       //fecha
-            tramaParseada[1] = trama.substr(8,4);       //ID
-            tramaParseada[2] = trama.substr(12,1);      //PID
-            tramaParseada[3] = trama.substr(13,2);      //COD
-            tramaParseada[4] = this._toInt(trama.substr(15,4));     //AN1
-            tramaParseada[5] = this._toInt(trama.substr(19,4));     //AN2
-            tramaParseada[6] = this._toInt(trama.substr(23,4));     //AN3
-            tramaParseada[7] = this._calcTempC(trama.substr(27,4))+'ºC';     //Temperatura exterior //TODO ELIMINA LOS ºC QUE NO DESEAMOS UN STRING
-            tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
-            tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
-            tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
-            tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
-            tramaParseada[12] = this._toInt(trama.substr(56,2));                 //temperatura interior
-            tramaParseada[13] = this._toInt(trama.substr(58,4));     //bat
-
-            tramaParseada[14] = this._toInt(trama.substr(0,8));       //fecha
+            tramaParseada['tramaRaw'] = trama;
+            tramaParseada['fecha'] = this._hexToDate (trama.substr(0,8));       //fecha
+            tramaParseada['sc_id'] = trama.substr(8,4);       //ID
+            //tramaParseada['pid'] = trama.substr(12,1);      //PID
+            //tramaParseada['cod'] = trama.substr(13,2);      //COD
+            tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));     //AN1
+            tramaParseada['medidaB'] = this._toInt(trama.substr(19,4));     //AN2
+            tramaParseada['medidaC'] = this._toInt(trama.substr(23,4));     //AN3
+            tramaParseada['tempExt'] = this._calcTempC(trama.substr(27,4));     //Temperatura exterior
+            //tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
+            //tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
+            //tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
+            //tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
+            tramaParseada['tempInt'] = this._toInt(trama.substr(56,2));                 //temperatura interior
+            tramaParseada['bat'] = this._toInt(trama.substr(58,4));     //bat
+            tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha
 
 
 

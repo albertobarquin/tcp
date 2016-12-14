@@ -15,16 +15,17 @@ var tcpserver = new TcpServer(global.abk_config.tcpPort, global.abk_config.tcpAd
 
 // Starting our server
 tcpserver.start(() => {
-    console.log(`Tcp Server escuchando en puerto: ${global.abk_config.tcpAdress}:${global.abk_config.tcpPort}`);
+    console.log(`\n\nTcp Server escuchando en puerto: ${global.abk_config.tcpAdress}:${global.abk_config.tcpPort}`);
 });
 
 //init bd & http server
 
 mongoose.connect(global.abk_config.db, (err, res) => {
     if(err) return console.log ('Error conectando a la base de datos:'+ err)
-    console.log('db connection ok'+global.abk_config.db)
+    console.log('\ndb connection ok \n')
     app.listen(global.abk_config.port, ()=>{
-        console.log(`API REST escuchando en puerto ${global.abk_config.port}`)
+        console.log(`API REST escuchando en puerto ${global.abk_config.port}`);
+        console.log('__________________________________________________________\n\n');
     })
 })
 

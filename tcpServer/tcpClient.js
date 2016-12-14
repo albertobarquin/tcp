@@ -9,6 +9,7 @@ class tcpClient {
         this.name    = `${this.address}:${this.port}`;
         this.socket  = socket;
         this.id      = "";
+        this.loginAtemps = 0;
     }
 
     receiveMessage (message) {

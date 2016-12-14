@@ -1,21 +1,24 @@
 /**
  * Created by albertobarquin on 5/12/16.
  */
-'use strict'
+'use strict';
 
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema
+const Schema = mongoose.Schema;
 
 const SensorDataSchema = Schema({
+    tramaRaw:String,
     medidaA:Number,
     medidaB:Number,
     medidaC:Number,
     sc_id:String,
-    time:Number
-})
-mongoose.model
-module.exports = mongoose.model('SensorData', SensorDataSchema)
+    time:Number,
+    tempExt:Number,
+    tempInt:Number,
+    bat:Number
+});
+module.exports = mongoose.model('SensorData', SensorDataSchema);
 
 
 
