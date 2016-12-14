@@ -58,7 +58,7 @@ class TcpServer {
             }
 
             // Broadcast the new connection
-             server.broadcast(`${client.name} connected.\n`);
+             server.broadcast(`\n\n\n${client.name} connected.\n`);
             //client.receiveMessage(`hola ${client.name}`);
 
             // Storing client for later usage
@@ -76,7 +76,7 @@ class TcpServer {
                 if (data_str.trim() === ''){ return}
 
                 if (data_str.substr(0,11) == "PCK_IDE0500"){
-                    console.log (data_str);
+                    //console.log (data_str);
                     client.id= 'E0500';
                     this._sendConfig(client);
                     //server.broadcast(`${client.id} says: ${"Config sent"}`, client);
@@ -98,7 +98,7 @@ class TcpServer {
                     }
 
                     if (regexEnd.exec(data_str)){
-                        console.log('END')
+                        console.log('END\n\n\n')
                         client.receiveMessage('ADIOS');
                         return true
                     }
