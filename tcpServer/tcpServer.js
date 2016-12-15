@@ -215,6 +215,31 @@ class TcpServer {
         let RNTC = (12.207 * valorSensorDecimal) / (3.3 - (0.0012207 * valorSensorDecimal));
         return ((3435 / (Math.log(RNTC / 10000) + 11.52104645313)) - 273.15).toFixed(2);
     }
+    _parseClinometro  (rawClino, num){
+
+            let result = null;
+            let _milivoltsClino = function (rawClino){
+                return ((-2500/2048)*rawClino) + 2500;
+            };
+
+            let miliVoltsClino = _milivoltsClino (rawClino)
+
+            switch (num){
+                case 1:
+                    result = (2.697847E-3 + (4.035098E-3 * miliVoltsClino)+( -5.029802E-10 * Math.pow(miliVoltsClino,2) )+( 3.005975E-12 * Math.pow(miliVoltsClino,3)) - 0.337640758783).toFixed(1);
+                    break;
+
+                case 2:
+                    result = (1.883518E-4 + (4.030367E-3 * miliVoltsClino)+( -6.812133E-10 * Math.pow(miliVoltsClino,2) )+( 2.733715E-12 * Math.pow(miliVoltsClino,3)) - 0.182222832920).toFixed(1);
+                    break;
+
+                case 3:
+
+                    result = (4.488158E-4 + (4.024531E-3 * miliVoltsClino)+( -1.087035E-9  * Math.pow(miliVoltsClino,2) )+( 2.994728E-12 * Math.pow(miliVoltsClino,3)) + 0.628422115871).toFixed(1);
+                    break;
+            }
+            return result
+        }
     _joinObj (obj){
         let result ='';
         for (var prop in obj){
@@ -231,6 +256,12 @@ class TcpServer {
         newSensorData.medidaA = sensorData.medidaA;
         newSensorData.medidaB =  sensorData.medidaB;
         newSensorData.medidaC =  sensorData.medidaC;
+
+        newSensorData.clino1 =  sensorData.clino1;
+        newSensorData.clino2 =  sensorData.clino2;
+        newSensorData.clino3 =  sensorData.clino3;
+
+
         newSensorData.sc_id   =  sensorData.sc_id;
         newSensorData.time    =  sensorData.time;
         newSensorData.tempExt =  sensorData.tempExt;
@@ -256,9 +287,15 @@ class TcpServer {
             tramaParseada['sc_id'] = trama.substr(8,4);       //ID
             //tramaParseada['pid'] = trama.substr(12,1);      //PID
             //tramaParseada['cod'] = trama.substr(13,2);      //COD
+
             tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));     //AN1
             tramaParseada['medidaB'] = this._toInt(trama.substr(19,4));     //AN2
             tramaParseada['medidaC'] = this._toInt(trama.substr(23,4));     //AN3
+
+            tramaParseada['clino1'] = this._parseClinometro(tramaParseada['medidaA'],1);
+            tramaParseada['clino2'] = this._parseClinometro(tramaParseada['medidaB'],2);
+            tramaParseada['clino3'] = this._parseClinometro(tramaParseada['medidaC'],3);
+
             tramaParseada['tempExt'] = this._calcTempC(trama.substr(27,4));     //Temperatura exterior
             //tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
             //tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
