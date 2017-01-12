@@ -34,7 +34,7 @@ function getSclusterDataByTime (req, res){
     let toT = req.params.toT;
     var query =SensorData.find({'sc_id':scId}).
     where('time').gt(fromT).lt(toT).
-
+    sort('time').
     select({'time': 1, 'clino1':1,'clino2':1, 'clino3':1, 'tempExt':1}).
     exec((err, sensorData) => {
         if (err) return res.status(500).send({mesagge: 'Error: '+err})

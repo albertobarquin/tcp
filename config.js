@@ -8,6 +8,6 @@ module.exports = {
     db : process.env.DB || 'mongodb://JohnL:3557-7334-BBbb#-BDCAP@127.0.0.1:27017/cloudapp', //'mongodb://username:password@host:port/database?options...');
     tcpTimeOut : 60*1000,
     sampleTime : 1,
-    syncCount : 2
+    syncCount : 10
 };
 
