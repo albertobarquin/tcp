@@ -175,7 +175,9 @@ class TcpServer {
         const sampleTime = global.abk_config.sampleTime || 1; //tiempo entre muestras en minutos
         const syncCount = global.abk_config.syncCount || 2 ;//número de muestras que acumula antes de enviar
         var clock = new UTCClock();
-        let now = (+(parseInt(clock.now.ms()/1000, 10).toFixed(0))).toString(16).toUpperCase()
+        let ajusteBisiesto = (clock.now.ms()/1000)+86400; //TODO sacar esto a un ajuste en la base dedatos y que no se aplique en años bisiestos
+
+        let now = (+(parseInt(ajusteBisiesto, 10).toFixed(0))).toString(16).toUpperCase()
         var sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
         var confMassage = "PCK_CON";
         var dataMassage = this._lpad(now,8,'0');
