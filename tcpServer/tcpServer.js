@@ -74,12 +74,12 @@ class TcpServer {
                 let data_str = data.toString();
 
                 if (data_str.trim() === ''){ return}
-
-                if (data_str.substr(0,11) == "PCK_IDE0500"){
+                console.log('PCK_ID ='+data_str.substr(0,11));
+                if (data_str.substr(0,6) == "PCK_ID"){
                     //console.log (data_str);
-                    client.id= 'E0500';
+                    client.id= data_str.substr(6,11);
                     this._sendConfig(client);
-                    //server.broadcast(`${client.id} says: ${"Config sent"}`, client);
+                   console.log('CONFIG SENT ');
                     return true
                 }
                 else if (data_str.substr(0,7) == "PCK_EST" || data_str.substr(0,3) == "END"){
@@ -90,7 +90,9 @@ class TcpServer {
                         //server.broadcast(`${client.id} says: ${dataPart[1]}`, client);
 
                         let tramaParseada = this._parse(dataPart[1]);
-                        this._saveData(tramaParseada);
+
+                        //this._saveData(tramaParseada);
+
                         //console.log(tramaParseada.join(', '))
                         server.broadcast(`${client.id} says: ${this._joinObj(tramaParseada)}`, client);
                         return true
@@ -287,16 +289,16 @@ class TcpServer {
             tramaParseada['tramaRaw'] = trama;
             tramaParseada['fecha'] = this._hexToDate (trama.substr(0,8));       //fecha
             tramaParseada['sc_id'] = trama.substr(8,4);       //ID
-            //tramaParseada['pid'] = trama.substr(12,1);      //PID
-            //tramaParseada['cod'] = trama.substr(13,2);      //COD
+            tramaParseada['pid'] = trama.substr(12,1);      //PID
+            tramaParseada['cod'] = trama.substr(13,2);      //COD
 
             tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));     //AN1
             tramaParseada['medidaB'] = this._toInt(trama.substr(19,4));     //AN2
             tramaParseada['medidaC'] = this._toInt(trama.substr(23,4));     //AN3
 
-            tramaParseada['clino1'] = this._parseClinometro(tramaParseada['medidaA'],1);
-            tramaParseada['clino2'] = this._parseClinometro(tramaParseada['medidaB'],2);
-            tramaParseada['clino3'] = this._parseClinometro(tramaParseada['medidaC'],3);
+            //tramaParseada['clino1'] = this._parseClinometro(tramaParseada['medidaA'],1);
+            //tramaParseada['clino2'] = this._parseClinometro(tramaParseada['medidaB'],2);
+            //tramaParseada['clino3'] = this._parseClinometro(tramaParseada['medidaC'],3);
 
             tramaParseada['tempExt'] = this._calcTempC(trama.substr(27,4));     //Temperatura exterior
             //tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
@@ -305,7 +307,7 @@ class TcpServer {
             //tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
             tramaParseada['tempInt'] = this._toInt(trama.substr(56,2));                 //temperatura interior
             tramaParseada['bat'] = this._toInt(trama.substr(58,4));     //bat
-            tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha
+            tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha en timestamp
 
 
 
