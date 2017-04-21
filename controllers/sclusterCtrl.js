@@ -89,7 +89,7 @@ function updateCluster (req, res){
 module.exports = {
     getSclusters,
     getScluster,
-    //getSclusterData,
+    getSclusterData,
     getLastSclusterData,
     getSclusterDataByTime,
     getDataBySensor,

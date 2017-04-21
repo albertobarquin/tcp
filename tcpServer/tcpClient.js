@@ -10,10 +10,11 @@ class tcpClient {
         this.socket  = socket;
         this.id      = "";
         this.loginAtemps = 0;
+        console.log('\n\nNUEVA CONEXION: '+this.name+'\n\n');
     }
 
-    receiveMessage (message) {
-        this.socket.write(message);
+    receiveMessage (message, callback = function(){return true}) {
+        this.socket.write(message, callback);
     }
 
 }

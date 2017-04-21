@@ -16,8 +16,10 @@ const SensorDataSchema = Schema({
     clino2:Number,
     clino3:Number,
     sc_id:String,
+    cod:String,
     time:Number,
     tempExt:Number,
+    humidity:Number,
     tempInt:Number,
     bat:Number
 });

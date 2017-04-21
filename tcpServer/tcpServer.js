@@ -4,7 +4,7 @@
 const net = require('net');
 const crc = require('crc');
 const UTCClock = require('utc-clock');
-const SensorData =require('../models/sensorsData')
+const SensorData =require('../models/sensorsData');
 
 
 // importing Client class
@@ -16,8 +16,6 @@ class TcpServer {
 
         this.port = port || 5000;
         this.address = address || '127.0.0.1';
-
-        // Array to hold our currently connected clients
         this.clients = [];
     }
 
@@ -25,13 +23,13 @@ class TcpServer {
      * Broadcasts messages to the network
      * The clientSender doesn't receive it's own message
      */
-    broadcast (message, clientSender) {
+    broadcast (message, clientSender) {//desactivado
         this.clients.forEach((client) => {
             if (client === clientSender || client.id === 'E0500' || client.id === '')
                 return;
-            client.receiveMessage('\n'+message+'\n');
+            //client.receiveMessage('\n'+message+'\n');
         });
-        console.log(message.replace(/\n+$/, ""));
+        //console.log(message.replace(/\n+$/, ""));
     }
 
     /*
@@ -40,17 +38,18 @@ class TcpServer {
      */
     start (callback) {
 
-        var server = this;
-        const regexEnd = /END/;
+        let server = this;
+
+        const regexEnd = /(END)/;
         const regexData =/PCK_DAT([0-9A-Fa-f-+-.]*)PCK_FIN/;
 
 
         this.connection = net.createServer((socket) => {
 
             socket.setTimeout(global.abk_config.tcpTimeOut);
+            //console.log('timeOut: '+global.abk_config.tcpTimeOut)
 
-            var client = new Client(socket);
-
+            let client = new Client(socket);
 
             if (!server._validateClient(client)) {
                 client.socket.destroy();
@@ -58,7 +57,7 @@ class TcpServer {
             }
 
             // Broadcast the new connection
-             server.broadcast(`\n\n\n${client.name} connected.\n`);
+            // server.broadcast(`\n\n\n${client.name} connected.\n`);
             //client.receiveMessage(`hola ${client.name}`);
 
             // Storing client for later usage
@@ -68,93 +67,76 @@ class TcpServer {
 
             // Triggered on message received by this client
             socket.on('data', (data) => {
-
-
-
                 let data_str = data.toString();
 
                 if (data_str.trim() === ''){ return}
-                console.log('PCK_ID ='+data_str.substr(0,11));
-                if (data_str.substr(0,6) == "PCK_ID"){
-                    //console.log (data_str);
-                    client.id= data_str.substr(6,11);
+
+
+                console.log('\tPKCH= '+data_str.substr(0,11)+'\t'+this._ahora()+'\n\n');
+
+                if (data_str.substr(0,7) == "PCK_IDE"){
+                //es la cabecera de los mensajes -> enviamos configuracion
+                    client.id= data_str.substr(7,4);
+
                     this._sendConfig(client);
-                   console.log('CONFIG SENT ');
+                    console.log('\t ' +client.id+' CONFIG SENT'+'\t'+this._ahora()+'\n');
                     return true
                 }
-                else if (data_str.substr(0,7) == "PCK_EST" || data_str.substr(0,3) == "END"){
+
+                if (data_str.substr(0,7) == "PCK_EST"){
+                    //console.log ('Trama de datos');
 
                     let dataPart = regexData.exec(data_str);
                     if (dataPart != null && dataPart[1]){
-                        //console.log(dataPart[1]);
+                        //console.log('\t\t'+this._ahora()+'\t'+client.id+'\n');
                         //server.broadcast(`${client.id} says: ${dataPart[1]}`, client);
 
                         let tramaParseada = this._parse(dataPart[1]);
 
-                        //this._saveData(tramaParseada);
+                        this._saveData(tramaParseada);
 
-                        //console.log(tramaParseada.join(', '))
-                        server.broadcast(`${client.id} says: ${this._joinObj(tramaParseada)}`, client);
-                        return true
+                        console.log('\t'+this._joinObj(tramaParseada));
+                        }
+
+                        //server.broadcast(`${client.id} says: ${this._joinObj(tramaParseada)}`, client);
+
 
                     }
+                if (regexEnd.exec(data_str)){
+                    console.log('\tEND Recibido'+'\t'+this._ahora()+'\t'+client.id+'\n');
 
-                    if (regexEnd.exec(data_str)){
-                        console.log('END\n\n\n')
-                        client.receiveMessage('ADIOS');
-                        return true
-                    }
-                }
-                else if (client.id =='' && data_str.trim() == "santiago@WOPR"){
-                    client.receiveMessage('Hello  professor Falken\n');
-                    client.receiveMessage(`La frecuencia de las medidas es de ${global.abk_config.sampleTime} y se envían en grupos de ${global.abk_config.syncCount}\n`);
-                    client.receiveMessage('Vía telnet sólo hay acceso a los datos en tiempo real, así que debes esperar a que lleguen\n');
-                    client.receiveMessage('Para cerrar sesión di adios\n\n\n\n\n');
-                    client.id = 'santiago';
-                    return true
-
-                }
-                else if (client.id =='' && data_str.trim() == "alberto@WOPR"){
-                    client.receiveMessage('Hello  professor Falken\n');
-                    client.receiveMessage(`La frecuencia de las medidas es de ${global.abk_config.sampleTime} y se envían en grupos de ${global.abk_config.syncCount}\n`);
-                    client.receiveMessage('Vía telnet sólo hay acceso a los datos en tiempo real, así que debes esperar a que lleguen\n');
-                    client.receiveMessage('Para cerrar sesión di adios\n\n\n\n\n');
-                    client.id = 'alberto';
-                    return true
-
-                }
-                else if (data_str.trim() == "adios" ||  client.id =='alberto' && data_str.trim() == "adios"){
-                    client.receiveMessage('Vuelve pronto\n');
-                    client.socket.end('bye');
-                    return true
-                }
-                else if (client.id =='') {
-                        client.receiveMessage(`Acceso denegado ${2-client.loginAtemps} intento/s restantes/s\n`);
-                        client.loginAtemps ++;
-                        if(client.loginAtemps>2) {client.socket.end('acceso no autorizado');}
-                        return true
-                }
-                else {
-
-                    server.broadcast(`${client.id} says: ${data_str}`, client);
-                }
+                    client.receiveMessage('ADIOS', ()=>{
+                        console.log('\tADIOS sended'+'\t'+this._ahora()+'\t'+client.id+'\n');
+                        setTimeout(()=>{
+                            client.socket.end();
+                        },1000)
+                    });
 
 
-            });
+                }//fin de END encontrado
+
+                return true
+
+            });// fin de on Data
 
             // Triggered when this client disconnects
             socket.on('end', () => {
                 // Removing the client from the list
                 server.clients.splice(server.clients.indexOf(client), 1);
                 // Broadcasting that this player left
-                server.broadcast(`${client.name} disconnected.\n`);
-                //console.log(`${client.name} disconnected.\n`);
+                //server.broadcast(`${client.name} disconnected.\n`);
+                console.log(`\t${client.name} disconnected.\t${this._ahora()}\n`);
             });
 
             // caso de error, se llama automáticamente a close
             socket.on('error', (err) => {
-                console.log (`error en la conexion tcp: ${err}`)
-            })
+                console.log (`\n\n\t\tERROR en la conexion tcp: ${err}\n\n`)
+            });
+            socket.on('close', (data) => {
+                console.log (`Evento close:  ${socket.remoteAddress} :: ${socket.remotePort} hadError: ${data} \t${client.id}\n\n\n`)
+
+            });
+
 
         });
 
@@ -174,25 +156,39 @@ class TcpServer {
     }
 
     _sendConfig(client){
-        const sampleTime = global.abk_config.sampleTime || 1; //tiempo entre muestras en minutos
-        const syncCount = global.abk_config.syncCount || 2 ;//número de muestras que acumula antes de enviar
-        var clock = new UTCClock();
+
+
+            let sampleTime = 1;
+            let syncCount = 2;
+
+
+
+        if (client.id == '0500'){
+             sampleTime = global.abk_config.sampleTime || 1; //tiempo entre muestras en minutos
+             syncCount = global.abk_config.syncCount || 2 ;//número de muestras que acumula antes de enviar
+        }
+        else if(client.id == '0501'){
+             sampleTime = global.abk_config.sampleTime1 || 1; //tiempo entre muestras en minutos
+             syncCount = global.abk_config.syncCount1 || 2 ;//número de muestras que acumula antes de enviar
+        }
+
+        let clock = new UTCClock();
         let ajusteBisiesto = (clock.now.ms()/1000)+86400; //TODO sacar esto a un ajuste en la base dedatos y que no se aplique en años bisiestos
 
-        let now = (+(parseInt(ajusteBisiesto, 10).toFixed(0))).toString(16).toUpperCase()
-        var sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
-        var confMassage = "PCK_CON";
-        var dataMassage = this._lpad(now,8,'0');
+        let now = (+(parseInt(ajusteBisiesto, 10).toFixed(0))).toString(16).toUpperCase();
+        let sample_time_hex_segundos = (sampleTime*60).toString(16).toUpperCase();
+        let confMassage = "PCK_CON";
+        let dataMassage = this._lpad(now,8,'0');
         dataMassage +=this._lpad(sample_time_hex_segundos,4,'0');
         dataMassage += this._lpad(syncCount.toString(16).toUpperCase(),4 ,'0');
 
-        var crc_msg = crc.crc8(dataMassage)
+        let crc_msg = crc.crc8(dataMassage)
 
         dataMassage += this._lpad(crc_msg.toString(16).toUpperCase(),2,'0');
-        confMassage += dataMassage
+        confMassage += dataMassage;
 
 
-        console.log(confMassage + '---------'+sampleTime+'/'+syncCount+'------'+this._ahora());
+        console.log('\tConfig paket: '+confMassage + '\t'+'sampletime: '+sampleTime+'\tsyncCount: '+syncCount+'\t'+this._ahora());
 
 
 
@@ -226,7 +222,7 @@ class TcpServer {
                 return ((-2500/2048)*rawClino) + 2500;
             };
 
-            let miliVoltsClino = _milivoltsClino (rawClino)
+            let miliVoltsClino = _milivoltsClino (rawClino);
 
             switch (num){
                 case 1:
@@ -246,31 +242,37 @@ class TcpServer {
         }
     _joinObj (obj){
         let result ='';
-        for (var prop in obj){
-            result += prop +': '+ obj[prop]+' '
+        for (let prop in obj){
+            result += prop +': '+ obj[prop]+'\n\t '
         }
-        result +='\n'
+        result +='\n';
         return result
     }
 
 
     _saveData(sensorData ){
         let newSensorData = new SensorData();
-        newSensorData.tramaRaw = sensorData.tramaRaw;
-        newSensorData.medidaA = sensorData.medidaA;
-        newSensorData.medidaB =  sensorData.medidaB;
-        newSensorData.medidaC =  sensorData.medidaC;
 
-        newSensorData.clino1 =  sensorData.clino1;
-        newSensorData.clino2 =  sensorData.clino2;
-        newSensorData.clino3 =  sensorData.clino3;
+
+
+        newSensorData.tramaRaw = sensorData.tramaRaw;
+
+        newSensorData.medidaA = sensorData.medidaA || 0 ;
+        newSensorData.medidaB =  sensorData.medidaB || 0;
+        newSensorData.medidaC =  sensorData.medidaC || 0;
+
+        newSensorData.clino1 =  sensorData.clino1 || 0;
+        newSensorData.clino2 =  sensorData.clino2 || 0;
+        newSensorData.clino3 =  sensorData.clino3 || 0;
 
 
         newSensorData.sc_id   =  sensorData.sc_id;
+        newSensorData.cod   =  sensorData.cod || '00';
         newSensorData.time    =  sensorData.time;
-        newSensorData.tempExt =  sensorData.tempExt;
-        newSensorData.tempInt =  sensorData.tempInt;
-        newSensorData.bat     =  sensorData.bat;
+        newSensorData.tempExt =  sensorData.tempExt || 0;
+        newSensorData.tempInt =  sensorData.tempInt || 0;
+        newSensorData.humidity = sensorData.humidity || 0;
+        newSensorData.bat     =  sensorData.bat || 0;
 
 
 
@@ -278,36 +280,62 @@ class TcpServer {
 
 
         newSensorData.save((err,scSaved)=>{
-            if (err) {console.log('error al guardar en la base de datos:'+err)}
-            else {console.log('saved')}
+            if (err) {console.log('ERROR al guardar en la base de datos:'+err+'\t'+this._ahora()+'\n')}
+            else {console.log('\tDB: Saved OK '+'\t'+this._ahora()+'\t'+'\n')}
         })
 
     }
 
     _parse (trama){
         const tramaParseada = [];
-            tramaParseada['tramaRaw'] = trama;
-            tramaParseada['fecha'] = this._hexToDate (trama.substr(0,8));       //fecha
-            tramaParseada['sc_id'] = trama.substr(8,4);       //ID
-            tramaParseada['pid'] = trama.substr(12,1);      //PID
-            tramaParseada['cod'] = trama.substr(13,2);      //COD
 
-            tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));     //AN1
-            tramaParseada['medidaB'] = this._toInt(trama.substr(19,4));     //AN2
-            tramaParseada['medidaC'] = this._toInt(trama.substr(23,4));     //AN3
+             tramaParseada['sc_id'] = trama.substr(8,4);       //ID
+            switch (tramaParseada['sc_id']) {
 
-            //tramaParseada['clino1'] = this._parseClinometro(tramaParseada['medidaA'],1);
-            //tramaParseada['clino2'] = this._parseClinometro(tramaParseada['medidaB'],2);
-            //tramaParseada['clino3'] = this._parseClinometro(tramaParseada['medidaC'],3);
+                case '0500':
+                    tramaParseada['tramaRaw'] = trama;
+                    tramaParseada['fecha'] = this._hexToDate (trama.substr(0,8));       //fecha
+                    tramaParseada['sc_id'] = trama.substr(8,4);       //ID
+                    tramaParseada['pid'] = trama.substr(12,1);      //PID
+                    tramaParseada['cod'] = trama.substr(13,2);      //COD
 
-            tramaParseada['tempExt'] = this._calcTempC(trama.substr(27,4));     //Temperatura exterior
-            //tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
-            //tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
-            //tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
-            //tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
-            tramaParseada['tempInt'] = this._toInt(trama.substr(56,2));                 //temperatura interior
-            tramaParseada['bat'] = this._toInt(trama.substr(58,4));     //bat
-            tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha en timestamp
+                    tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));     //AN1
+                    tramaParseada['medidaB'] = this._toInt(trama.substr(19,4));     //AN2
+                    tramaParseada['medidaC'] = this._toInt(trama.substr(23,4));     //AN3
+
+                    tramaParseada['clino1'] = this._parseClinometro(tramaParseada['medidaA'],1);
+                    tramaParseada['clino2'] = this._parseClinometro(tramaParseada['medidaB'],2);
+                    tramaParseada['clino3'] = this._parseClinometro(tramaParseada['medidaC'],3);
+
+                    tramaParseada['tempExt'] = this._calcTempC(trama.substr(27,4));     //Temperatura exterior
+                    //tramaParseada[8] = this._toInt(trama.substr(31,4));     //AN5
+                    //tramaParseada[9] = this._toInt(trama.substr(35,4));     //AN6
+                    //tramaParseada[10] = this._toInt(trama.substr(39,4));    //AN7
+                    //tramaParseada[11] = this._toInt(trama.substr(43,4));    //AN8
+                    tramaParseada['tempInt'] = this._toInt(trama.substr(56,2));                 //temperatura interior
+                    tramaParseada['bat'] = this._toInt(trama.substr(58,4));     //bat
+                    tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha en timestamp
+
+                    break;
+                case '0501':
+                    tramaParseada['tramaRaw'] = trama;
+                    tramaParseada['fecha'] = this._hexToDate(trama.substr(0, 8)); //fecha
+                    tramaParseada['pid'] = trama.substr(12, 1); //PID
+                    tramaParseada['cod'] = trama.substr(13, 2); //COD
+                    tramaParseada['medidaA'] = this._toInt(trama.substr(15,4));
+                    tramaParseada['bat'] = trama.substr(69, 4); //bat
+                    tramaParseada['humidity'] = (trama.substr(62,4)/10);     //humedad
+                    tramaParseada['tempInt'] = (trama.substr(66,4))/10;     //temp
+                    tramaParseada['time'] = this._toInt(trama.substr(0,8));       //fecha en timestamp
+
+                    break;
+
+
+            }
+
+
+
+
 
 
 
